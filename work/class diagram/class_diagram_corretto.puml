@@ -1,0 +1,162 @@
+@startuml
+' Stile grafico del modello fornito dall'utente
+top to bottom direction
+hide circle
+show empty members
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam defaultFontColor black
+skinparam ArrowColor black
+skinparam ArrowThickness 1
+skinparam nodesep 55
+skinparam ranksep 65
+skinparam groupInheritance 3
+skinparam class {
+  BackgroundColor white
+  BorderColor black
+  BorderThickness 1
+  FontColor black
+  FontStyle plain
+  AttributeFontColor black
+  AttributeFontStyle plain
+  RoundCorner 0
+}
+skinparam note {
+  BackgroundColor white
+  BorderColor black
+  FontColor black
+  FontName Times New Roman
+  FontSize 12
+  Shadowing false
+}
+
+abstract class Utente {
+  id: Integer
+  nome: String
+  cognome: String
+  email: String
+  passwordHash: String
+  stato: StatoAccount
+  --
+}
+
+class Lettore {
+  --
+}
+class Libraio {
+  nomeLibreria: String
+  --
+}
+class GestoreUtenti {
+  --
+}
+
+class Libro {
+  isbn: String
+  titolo: String
+  autore: String
+  editore: String
+  edizione: String
+  genere: String
+  trama: String
+  copertina: Immagine
+  --
+}
+
+class Offerta {
+  prezzo: Decimal
+  copieDisponibili: Integer
+  stato: StatoOfferta
+  --
+}
+
+class Carrello {
+  id: String
+  /totale: Decimal
+  --
+}
+
+class RigaCarrello {
+  quantita: Integer
+  --
+}
+
+class Ordine {
+  numeroOrdine: Integer
+  data: DateTime
+  indirizzo: String
+  citta: String
+  cap: String
+  /totale: Decimal
+  --
+}
+
+class RigaOrdine {
+  quantita: Integer
+  prezzoUnitario: Decimal
+  stato: StatoRigaOrdine
+  --
+}
+
+note "Utente.stato = ATTIVO, BLOCCATO\n\nOfferta.stato = DISPONIBILE, ESAURITA,\nSOSPESA, RIMOSSA\n\nRigaOrdine.stato = IN_LAVORAZIONE,\nSPEDITO, CONSEGNATO" as Stati
+Stati .. Offerta
+
+Utente <|-- Lettore
+Utente <|-- Libraio
+Utente <|-- GestoreUtenti
+
+Lettore "0..1" -- "0..1" Carrello : associato a
+Lettore "1" -- "0..*" Ordine : effettua
+Libraio "1" -- "0..*" Offerta : propone
+Libro "1" -- "0..*" Offerta : riguarda
+
+Carrello "1" *-- "0..*" RigaCarrello : contiene
+RigaCarrello "0..*" -- "1" Offerta : si riferisce a
+Ordine "1" *-- "1..*" RigaOrdine : contiene
+RigaOrdine "0..*" -- "1" Offerta : si riferisce a
+
+note left of Carrello
+  Un carrello senza Lettore associato e' anonimo
+  ed e' riconosciuto nel contesto della navigazione.
+  Il checkout richiede un Lettore autenticato e attivo.
+  Si assume al massimo un carrello per Lettore.
+  Conservazione, scadenza e fusione al login
+  devono essere specificate nei casi d'uso.
+end note
+
+note bottom of RigaCarrello
+  {quantita > 0}
+  {offerta univoca all'interno del carrello}
+  {Carrello.totale = somma(quantita * Offerta.prezzo)}
+  Il carrello non prenota le copie (scelta proposta).
+  Quantita e acquistabilita sono verificate
+  all'aggiunta, alla modifica e al checkout.
+end note
+
+note right of Offerta
+  {prezzo > 0}
+  {copieDisponibili >= 0}
+  {coppia Libro, Libraio univoca}
+  Acquistabile solo se DISPONIBILE,
+  con copie sufficienti e Libraio ATTIVO.
+  La rimozione dell'offerta di un Libraio
+  non rimuove quelle degli altri Librai.
+  Libri e offerte citati dagli ordini
+  sono conservati per lo storico.
+end note
+
+note bottom of RigaOrdine
+  {quantita > 0}
+  {offerta univoca all'interno dell'ordine}
+  prezzoUnitario e' fissato all'acquisto.
+  {Ordine.totale = somma(quantita * prezzoUnitario)}
+  Ogni Libraio aggiorna solo le proprie righe.
+  Avanzamento: IN_LAVORAZIONE -> SPEDITO -> CONSEGNATO.
+end note
+
+@enduml
+
