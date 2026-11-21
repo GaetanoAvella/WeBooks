@@ -1,0 +1,683 @@
+@startuml
+hidefootbox
+title SD 1: Login
+actor __UtenteRegistrato__ as UtenteRegistrato
+participant "__Login_Boundary__" as Boundary
+participant "__Homepage_Boundary__" as Boundary2
+participant "__Login_Control__" as Control
+participant "__User_Entity__" as Entity
+
+UtenteRegistrato++
+Boundary++
+UtenteRegistrato -> Boundary: inserisci(username, password)
+UtenteRegistrato -> Boundary: invia()
+Boundary -> Control++: invia(username, password)
+Boundary--
+Control -> Entity++: authentica(username, password)
+Entity --> Control: utente
+Entity--
+Control --> Boundary2++: visualizzaHomepage()
+@enduml
+
+@startuml
+hidefootbox
+title SD 1.1: Autenticazione fallita
+actor __UtenteRegistrato__ as Utente
+participant "__Login_Boundary__" as Boundary
+participant "__Login_Control__" as Control
+participant "__User_Entity__" as Entity
+
+Utente++
+Boundary++
+Entity++
+Utente -> Boundary: inserisci(username, password)
+Utente -> Boundary: invio()
+Boundary -> Control++: invia(username, password)
+Control -> Entity: authenticate(username, password)
+Entity --> Control: null
+Control --> Boundary: mostraErrore()
+Control--
+@enduml
+
+@startuml
+hidefootbox
+title SD 2: Logout
+actor __UtenteRegistrato__ as UtenteRegistrato
+participant "__Homepage_Boundary__" as Boundary
+participant "__Login_Control__" as Control
+
+UtenteRegistrato++
+Boundary++
+UtenteRegistrato -> Boundary: cliccaLogout()
+Boundary -> Control++: richiediLogout()
+Control --> Boundary: visualizzaHomepage()
+@enduml
+
+@startuml
+hidefootbox
+title SD 3: Visualizzazione profilo
+actor __UtenteRegistrato__ as UtenteRegistrato
+participant "__Homepage_Boundary__" as Boundary
+participant "__Profilo_Control__" as Control
+participant "__User_Entity__" as Entity
+participant "__Profilo_Boundary__" as Boundary2
+
+UtenteRegistrato++
+Boundary++
+UtenteRegistrato -> Boundary: cliccaProfilo()
+Boundary -> Control++: richiediDatiProfilo()
+Boundary--
+Control -> Entity++: getDatiUtente(idUtente)
+Entity --> Control: datiProfilo
+Entity--
+Control --> Boundary2++: mostraProfilo(datiProfilo)
+@enduml
+
+@startuml
+hidefootbox
+title SD 4: Modifica profilo
+actor __UtenteRegistrato__ as UtenteRegistrato
+participant "__Profilo_Boundary__" as Boundary
+participant "__ModificaProfilo_Boundary__" as Boundary2
+participant "__Profilo_Control__" as Control
+participant "__User_Entity__" as Entity
+
+UtenteRegistrato++
+Boundary++
+UtenteRegistrato -> Boundary: cliccaModificaProfilo()
+Boundary -> Control++: richiediFormModifica()
+Boundary--
+Control --> Entity++: getDatiUtente()
+Entity --> Control: datiUtente
+Entity--
+Control --> Boundary2++: mostraFormPrecompilato()
+Control--
+
+UtenteRegistrato -> Boundary2: inserisciNuoviDati(dati, passwordAttuale)
+UtenteRegistrato -> Boundary2: salva()
+Boundary2 -> Control++: inviaNuoviDati(dati, passwordAttuale)
+Boundary2--
+
+Control -> Entity++: verificaPasswordAttuale(passwordAttuale)
+Entity --> Control: true
+Entity--
+
+Control -> Entity++: aggiornaDatiUtente(dati)
+Entity --> Control: confermaAggiornamento
+Entity--
+
+Control --> Boundary++: mostraProfiloAggiornato()
+@enduml
+
+@startuml
+hidefootbox
+title SD 4.1: Password errata
+actor __UtenteRegistrato__ as UtenteRegistrato
+participant "__ModificaProfilo_Boundary__" as Boundary
+participant "__Profilo_Boundary__" as Boundary2
+participant "__Profilo_Control__" as Control
+participant "__User_Entity__" as Entity
+
+UtenteRegistrato++
+Boundary++
+UtenteRegistrato -> Boundary: inserisciNuoviDati(dati, passwordErrata)
+UtenteRegistrato -> Boundary: salva()
+Boundary -> Control++: validaESalvaDati(dati, passwordErrata)
+Boundary--
+
+Control -> Entity++: verificaPasswordAttuale(passwordErrata)
+Entity --> Control: false
+Entity--
+
+Control --> Boundary2++: segnalaPasswordErrata()
+Control --> Boundary2: visualizzaProfilo()
+Control--
+@enduml
+
+@startuml
+hidefootbox
+title SD 4.2: Email non disponibile
+actor __UtenteRegistrato__ as UtenteRegistrato
+participant "__ModificaProfilo_Boundary__" as Boundary
+participant "__Profilo_Boundary__" as Boundary2
+participant "__Profilo_Control__" as Control
+participant "__User_Entity__" as Entity
+
+UtenteRegistrato++
+Boundary++
+UtenteRegistrato -> Boundary: inserisciNuoviDati(dati, passwordAttuale)
+UtenteRegistrato -> Boundary: salva()
+Boundary -> Control++: validaESalvaDati(dati, passwordAttuale)
+Boundary--
+Control -> Entity++: verificaPasswordAttuale(passwordAttuale)
+Entity --> Control: true
+Entity--
+
+Control -> Entity++: checkEmailDisponibile(emailNonDisponibile)
+Entity --> Control: false
+Entity--
+
+Control --> Boundary2++: segnalaErrore()
+Control --> Boundary2: visualizzaProfilo()
+Control--
+@enduml
+
+@startuml
+hidefootbox
+title SD 5: Registrazione
+actor __Visitatore__ as Visitatore
+participant "__Registrazione_Boundary__" as Boundary
+participant "__Login_Boundary__" as Boundary2
+participant "__Registrazione_Control__" as Control
+participant "__User_Entity__" as Entity
+
+Visitatore++
+Boundary++
+Visitatore -> Boundary: inserisciDati(dati, email, password)
+Visitatore -> Boundary: conferma()
+Boundary -> Control++: validaESalvaUtente(dati)
+Boundary--
+Control -> Entity++: creaUtente(dati)
+Entity --> Control: utenteCreato
+Entity--
+Control --> Boundary2++: confermaRegistrazione()
+Control --> Boundary2: reindirizzaALogin()
+@enduml
+
+@startuml
+hidefootbox
+title SD 6: Ricerca libro
+actor __Visitatore__ as Visitatore
+participant "__Homepage_Boundary__" as Boundary
+participant "__Catalogo_Control__" as Control
+participant "__Catalogo_Entity__" as Entity
+
+Visitatore++
+Boundary++
+Visitatore -> Boundary: inserisciChiaveRicerca(stringa)
+Visitatore -> Boundary: cerca()
+Boundary -> Control++: invia(stringa)
+Control -> Entity++: queryLibro(stringa)
+Entity --> Control: listaRisultati
+Entity--
+Control --> Boundary: mostraRisultati(listaRisultati)
+@enduml
+
+@startuml
+hidefootbox
+title SD 6.1: Libro non trovato
+actor __Visitatore__ as Visitatore
+participant "__Homepage_Boundary__" as Boundary
+participant "__Catalogo_Control__" as Control
+participant "__Catalogo_Entity__" as Entity
+
+Visitatore++
+Boundary++
+Visitatore -> Boundary: inserisciChiaveRicerca(stringa)
+Visitatore -> Boundary: cerca()
+Boundary -> Control++: invia(stringa)
+Control -> Entity++: queryLibro(stringa)
+Entity --> Control: null
+Entity--
+Control --> Boundary: mostraPagina("Nessun risultato")
+@enduml
+
+@startuml
+hidefootbox
+title SD 7: Visualizzazione scheda prodotto
+actor __Visitatore__ as Utente
+participant "__Homepage_Boundary__" as Boundary
+participant "__Libro_Boundary__" as Boundary2
+participant "__Libro_Control__" as Control
+participant "__Catalogo_Entity__" as Entity
+
+Utente++
+Boundary++
+Utente -> Boundary: selezionaLibro(idLibro)
+Boundary -> Control++: richiediDettagli(idLibro)
+Boundary--
+Control -> Entity++: getDettagliLibro(idLibro)
+Entity --> Control: datiLibroEOfferte
+Entity--
+Control --> Boundary2++: datiLibro(datiLibroEOfferte)
+@enduml
+
+@startuml
+hidefootbox
+title SD 8: Aggiunta al carrello
+actor __Visitatore__ as Utente
+participant "__Libro_Boundary__" as Boundary
+participant "__Homepage_Boundary__" as Boundary2
+participant "__Carrello_Control__" as Control
+participant "__Carrello_Entity__" as CartEntity
+participant "__Catalogo_Entity__" as CatEntity
+
+Utente++
+Boundary++
+Utente -> Boundary: impostaQuantita(qta)
+Utente -> Boundary: aggiungiAlCarrello(idOfferta, qta)
+Boundary -> Control++: richiestaAggiunta(idOfferta, qta)
+Boundary--
+Control -> CartEntity++: getQuantitaGiaInCarrello(idOfferta)
+CartEntity --> Control: qtaInCarrello
+CartEntity--
+
+Control -> CatEntity++: verificaDisponibilita(idOfferta, qta + qtaInCarrello)
+CatEntity --> Control: disponibile
+CatEntity--
+
+Control -> CartEntity++: aggiungiArticolo(idOfferta, qta)
+CartEntity --> Control: confermaAggiunta
+CartEntity--
+
+Control --> Boundary2++: notificaSuccessoERitornaHomepage()
+@enduml
+
+@startuml
+hidefootbox
+title SD 9: Gestione carrello
+actor __Visitatore__ as Utente
+participant "__Carrello_Boundary__" as Boundary
+participant "__Carrello_Control__" as Control
+participant "__Carrello_Entity__" as Entity
+participant "__Catalogo_Entity__" as Entity2
+
+Utente++
+Boundary++
+
+Utente -> Boundary: modificaQuantita(idArticolo, nuovaQta)
+Boundary -> Control++: aggiornaQuantita(idArticolo, nuovaQta)
+Control --> Entity2++: verificaDisponibilità(idOfferta, qta + nuovaQta)
+Entity2 --> Control: disponibile
+Entity2--
+Control -> Entity++: setQuantita(idArticolo, nuovaQta)
+Entity --> Control: confermaAggiornamento
+Entity--
+Control --> Boundary: visualizzaCarrelloAggiornato()
+@enduml
+
+@startuml
+hidefootbox
+title SD 9.1: Quantità aggiunta non disponibile
+actor __Visitatore__ as Utente
+participant "__Libro_Boundary__" as Boundary
+participant "__Carrello_Control__" as Control
+participant "__Carrello_Entity__" as CartEntity
+participant "__Catalogo_Entity__" as CatEntity
+
+Utente++
+Boundary++
+Utente -> Boundary: impostaQuantita(qtaEccessiva)
+Utente -> Boundary: aggiungiAlCarrello(idOfferta, qtaEccessiva)
+Boundary -> Control++: richiestaAggiunta(idOfferta, qtaEccessiva)
+
+Control -> CartEntity++: getQuantitaGiaInCarrello(idOfferta)
+CartEntity --> Control: qtaInCarrello
+CartEntity--
+
+Control -> CatEntity++: verificaDisponibilita(idOfferta, qtaEccessiva + qtaInCarrello)
+CatEntity --> Control: nonDisponibile
+CatEntity--
+
+Control --> Boundary: segnalaQuantitaNonDisponibile()
+@enduml
+
+@startuml
+hidefootbox
+title SD 10: Checkout
+actor __Lettore__ as Lettore
+participant "__Carrello_Boundary__" as Boundary
+participant "__Checkout_Boundary__" as C_Boundary
+participant "__Checkout_Control__" as Control
+participant "__Carrello_Entity__" as CartEntity
+participant "__Catalogo_Entity__" as CatEntity
+participant "__Ordine_Entity__" as OrdEntity
+
+Lettore++
+Boundary++
+Lettore -> Boundary: procediAlCheckout()
+Boundary -> Control++: inizializzaCheckout()
+Boundary--
+Control -> CartEntity++: getContenutoCarrello()
+CartEntity --> Control: listaArticoli
+CartEntity--
+Control --> C_Boundary++: mostraFormCheckout(listaArticoli)
+Control--
+
+Lettore -> C_Boundary: inserisciDati(spedizione, pagamento)
+Lettore -> C_Boundary: confermaAcquisto()
+C_Boundary -> Control++: elaboraOrdine(spedizione, pagamento)
+C_Boundary--
+
+Control -> CatEntity++: verificaDisponibilitaStock(listaArticoli)
+CatEntity --> Control: disponibile
+CatEntity--
+
+Control -> OrdEntity++: creaOrdine(listaArticoli, spedizione)
+OrdEntity --> Control: numeroOrdine
+OrdEntity--
+
+Control -> CatEntity++: scalaGiacenzeMagazzino(listaArticoli)
+CatEntity --> Control: giacenzeAggiornate
+CatEntity--
+
+Control -> CartEntity++: svuotaCarrello()
+CartEntity --> Control: carrelloVuoto
+CartEntity--
+
+Control --> C_Boundary++: mostraConferma(numeroOrdine)
+@enduml
+
+@startuml
+hidefootbox
+title SD 10.1: Errore quantità in checkout
+actor __Lettore__ as Lettore
+participant "__Checkout_Boundary__" as Boundary
+participant "__Carrello_Boundary__" as Boundary2
+participant "__Checkout_Control__" as Control
+participant "__Catalogo_Entity__" as CatEntity
+
+Lettore++
+Boundary++
+Lettore -> Boundary: inserisciDati(spedizione, pagamento)
+Lettore -> Boundary: confermaAcquisto()
+Boundary -> Control++: elaboraOrdine(spedizione, pagamento)
+Boundary--
+Control -> CatEntity++: verificaDisponibilitaStock(listaArticoli)
+CatEntity --> Control: nonDisponibile(articoloEsaurito)
+CatEntity--
+
+Control --> Boundary2: riportaAlCarrelloConErrore("Quantità non più disponibile")
+@enduml
+
+@startuml
+hidefootbox
+title SD 11: Visualizzazione storico ordini
+actor __Lettore__ as Lettore
+participant "__Homepage_Boundary__" as Boundary
+participant "__Ordini_Boundary__" as Boundary2
+participant "__Ordini_Control__" as Control
+participant "__User_Entity__" as Entity
+
+Lettore++
+Boundary++
+Lettore -> Boundary: cliccaMieiOrdini()
+Boundary -> Control++: richiediStorico(idLettore)
+Boundary--
+Control -> Entity++: getOrdini()
+Entity --> Control: listaOrdini
+Entity--
+Control --> Boundary2++: mostraElencoOrdini(listaOrdini)
+@enduml
+
+@startuml
+hidefootbox
+title SD 12: Visualizzazione dettaglio ordine
+actor __Lettore__ as Lettore
+participant "__Ordini_Boundary__" as Boundary
+participant "__Ordine_Boundary__" as Boundary2
+participant "__Ordini_Control__" as Control
+participant "__Ordine_Entity__" as Entity
+
+Lettore++
+Boundary++
+Lettore -> Boundary: selezionaOrdine(idOrdine)
+Boundary -> Control++: richiediDettaglio(idOrdine)
+Boundary--
+Control -> Entity++: getDettaglioOrdine(idOrdine)
+Entity --> Control: dettagliComplessivi
+Entity--
+Control --> Boundary2++: mostraDettaglio(dettagliComplessivi)
+@enduml
+
+@startuml
+hidefootbox
+title SD 13: Inserimento offerta
+actor __Libraio__ as Libraio
+participant "__DashboardLibraio_Boundary__" as Boundary
+participant "__Offerta_Boundary__" as Boundary2
+participant "__Catalogo_Control__" as Control
+participant "__Catalogo_Entity__" as Entity
+participant "__Offerta_Entity__" as Entity2
+
+Libraio++
+Boundary++
+Libraio -> Boundary: aggiungiOfferta()
+Boundary -> Control++: richiediFormISBN()
+Boundary--
+Control --> Boundary2++: mostraFormISBN()
+Control--
+
+Libraio -> Boundary2: compilaFormISBN(ISBN)
+Libraio -> Boundary2: conferma()
+Boundary2 -> Control++: controllaISBN(ISBN)
+
+Control -> Entity++: getLibro(ISBN)
+Entity --> Control: null
+Control --> Boundary2: mostraFormOfferta()
+Control--
+Libraio --> Boundary2: compilaFormOfferta()
+Libraio --> Boundary2: conferma()
+Boundary2 --> Control++: creaLibroeOfferta()
+Boundary2--
+Control --> Entity: salvaLibro()
+Entity --> Control--: conferma
+Control --> Entity2++: salvaOfferta()
+Entity2 --> Control--: conferma
+Entity2--
+Control --> Boundary++: aggiornaDashboard()
+Control--
+@enduml
+
+@startuml
+hidefootbox
+title SD 13.1: Inserimento offerta con libro già presente
+actor __Libraio__ as Libraio
+participant "__Offerta_Boundary__" as Boundary2
+participant "__DashboardLibraio_Boundary__" as Boundary
+participant "__Catalogo_Control__" as Control
+participant "__Catalogo_Entity__" as Entity
+participant "__Offerta_Entity__" as Entity2
+
+Libraio++
+Libraio -> Boundary2++: compilaFormISBN(ISBN)
+Libraio -> Boundary2: conferma()
+Boundary2 -> Control++: controllaISBN(ISBN)
+
+Control -> Entity++: getLibro(ISBN)
+Entity --> Control: datiLibro
+Entity--
+Control --> Boundary2: mostraFormOfferta(datiLibro)
+Control--
+Libraio --> Boundary2: compilaFormOfferta()
+Libraio --> Boundary2: conferma()
+Boundary2 --> Control++: creaOfferta()
+Boundary2--
+Control --> Entity2++: salvaOfferta()
+Entity2 --> Control--: conferma
+Entity2--
+
+Control --> Boundary++: aggiornaDashboard()
+Control--
+@enduml
+
+@startuml
+hidefootbox
+title SD 14: Rimozione offerta
+actor __Libraio__ as Libraio
+participant "__DashboardLibraio_Boundary__" as Boundary
+participant "__Catalogo_Control__" as Control
+participant "__Offerta_Entity__" as Entity
+
+Libraio++
+Boundary++
+Libraio -> Boundary: cliccaRimuovi(idLibro)
+Boundary -> Control++: richiediRimozione(idLibro)
+Control -> Entity++: setStato(idLibro, "RIMOSSO")
+Entity --> Control: confermaEliminazione
+Entity--
+Control --> Boundary: aggiornaDashboard()
+Control--
+@enduml
+
+@startuml
+hidefootbox
+title SD 15: Modifica offerta
+actor __Libraio__ as Libraio
+participant "__DashboardLibraio_Boundary__" as Boundary
+participant "__Offerta_Boundary__" as Boundary2
+participant "__Catalogo_Control__" as Control
+participant "__Offerta_Entity__" as Entity
+participant "__Catalogo_Entity__" as Entity2
+
+Libraio++
+Boundary++
+Libraio -> Boundary: cliccaModifica(idLibro)
+Boundary -> Control++: richiediDatiOfferta(idOfferta)
+Boundary--
+Control -> Entity++: getOfferta(idOfferta)
+Entity --> Control: datiAttuali
+Entity--
+Control --> Entity2++: getLibro(idLibro)
+Entity2 --> Control: datiLibro
+Entity2--
+Control --> Boundary2++: mostraFormPrecompilato(datiAttuali)
+Control--
+
+Libraio -> Boundary2: modificaDati(nuoviDati)
+Libraio -> Boundary2: conferma()
+Boundary2 -> Control++: validaEAggiornaOfferta(nuoviDati)
+Boundary2--
+Control -> Entity++: updateOfferta(nuoviDati)
+Entity --> Control: confermaAggiornamento
+Entity--
+Control --> Boundary++: aggiornaDashboard()
+Control--
+@enduml
+
+@startuml
+hidefootbox
+title SD 16: Visualizzazione ordini ricevuti
+actor __Libraio__ as Libraio
+participant "__LibraioDashboard_Boundary__" as Boundary
+participant "__OrdiniRicevuti_Boundary__" as Boundary2
+participant "__Ordine_Boundary__" as Boundary3
+participant "__Ordini_Control__" as Control
+participant "__User_Entity__" as Entity
+participant "__Ordine_Entity__" as Entity2
+
+Libraio++
+Boundary++
+Libraio -> Boundary: cliccaOrdiniRicevuti()
+Boundary -> Control++: richiediOrdiniLibraio(idLibraio)
+Boundary--
+Control -> Entity++: getOrdini()
+Entity --> Control: listaOrdiniRicevuti
+Entity--
+Control --> Boundary2++: mostraElencoOrdini(listaOrdiniRicevuti)
+Control--
+
+Libraio -> Boundary2: selezionaOrdine(idOrdine)
+Boundary2 -> Control++: richiediDettaglioSpecifico(idOrdine, idLibraio)
+Boundary2--
+Control -> Entity2++: getDettaglio(idOrdine, idLibraio)
+Entity2 --> Control: dettaglioFiltrato
+Entity2--
+Control --> Boundary3++: mostraDettaglio(dettaglioFiltrato)
+Control--
+@enduml
+
+@startuml
+hidefootbox
+title SD 17: Aggiornamento stato ordine
+actor __Libraio__ as Libraio
+participant "__Ordine_Boundary__" as Boundary
+participant "__Ordini_Control__" as Control
+participant "__Ordine_Entity__" as Entity
+
+Libraio++
+Boundary++
+Libraio -> Boundary: selezionaNuovoStato(nuovoStato)
+Libraio -> Boundary: cliccaAggiorna()
+Boundary -> Control++: aggiornaStato(idOrdine, idLibraio, nuovoStato)
+Control -> Entity++: setStatoParteOrdine(idOrdine, idLibraio, nuovoStato)
+Entity --> Control: statoAggiornato
+Entity--
+Control --> Boundary: confermaAggiornamento()
+@enduml
+
+@startuml
+hidefootbox
+title SD 18: Visualizzazione ordini globali
+actor __GestoreUtenti__ as GestoreUtenti
+participant "__UMDashboard_Boundary__" as Boundary
+participant "__Ordini_Boundary__" as Boundary2
+participant "__Ordine_Boundary__" as Boundary3
+participant "__Ordini_Control__" as Control
+participant "__Ordine_Entity__" as Entity
+
+GestoreUtenti++
+Boundary++
+GestoreUtenti -> Boundary: cliccaOrdini()
+Boundary -> Control++: richiediTuttiGliOrdini()
+Boundary--
+Control -> Entity++: getAllOrdini()
+Entity --> Control: listaOrdiniGlobali
+Entity--
+Control --> Boundary2++: mostraElencoOrdini(listaOrdiniGlobali)
+Control--
+
+GestoreUtenti -> Boundary2: selezionaOrdine(idOrdine)
+Boundary2 -> Control++: richiediDettaglioCompleto(idOrdine)
+Boundary2--
+Control -> Entity++: getDettaglioOrdine(idOrdine)
+Entity --> Control: dettaglioCompleto
+Entity--
+Control --> Boundary3++: mostraDettaglio(dettaglioCompleto)
+@enduml
+
+@startuml
+hidefootbox
+title SD 19: Creazione account libraio
+actor __GestoreUtenti__ as GestoreUtenti
+participant "__UMDashboard_Boundary__" as Boundary
+participant "__NuovoLibraio_Boundary__" as Boundary2
+participant "__GestioneUtenti_Control__" as Control
+participant "__User_Entity__" as Entity
+
+GestoreUtenti++
+Boundary++
+GestoreUtenti -> Boundary: cliccaAggiungiLibraio()
+Boundary -> Control++: richiediFormCreazione()
+Boundary--
+Control --> Boundary2++: mostraFormVuoto()
+Control--
+
+GestoreUtenti -> Boundary2: inserisciDati(nome, cognome, email, pswProvvisoria)
+GestoreUtenti -> Boundary2: conferma()
+Boundary2 -> Control++: validaECreaAccount(dati)
+Boundary2--
+Control -> Entity++: creaUtenteLibraio(dati)
+Entity --> Control: accountCreato
+Entity--
+Control --> Boundary++: aggiornaElencoUtenti()
+@enduml
+
+@startuml
+hidefootbox
+title SD 20: Blocco e riattivazione account
+actor __GestoreUtenti__ as GestoreUtenti
+participant "__UMDashboard_Boundary__" as Boundary
+participant "__GestioneUtenti_Control__" as Control
+participant "__User_Entity__" as Entity
+
+GestoreUtenti++
+Boundary++
+GestoreUtenti -> Boundary: selezionaAccount(idUtente)
+GestoreUtenti -> Boundary: cliccaBloccaORiattiva()
+Boundary -> Control++: richiediModificaStato(idUtente)
+Control -> Entity++: toggleStatoAccount(idUtente)
+Entity --> Control: statoModificato
+Entity--
+Control --> Boundary: aggiornaElencoUtenti()
+@enduml
